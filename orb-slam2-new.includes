@@ -1,0 +1,8 @@
+Examples/ROS/ORB_SLAM2/src
+include
+Thirdparty/DBoW2/DBoW2
+Thirdparty/DBoW2/DUtils
+Thirdparty/g2o/g2o/core
+Thirdparty/g2o/g2o/solvers
+Thirdparty/g2o/g2o/stuff
+Thirdparty/g2o/g2o/types

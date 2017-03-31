@@ -102,8 +102,11 @@ int main(int argc, char **argv)
 
     tfb_ = new tf::TransformBroadcaster();
 
-    message_filters::Subscriber<sensor_msgs::Image> rgb_sub(nh, "/camera/rgb/image_color", 1);//image_raw, image_color
-    message_filters::Subscriber<sensor_msgs::Image> depth_sub(nh, "camera/depth_registered/image_raw", 1);//_registered
+    // TODO: use ros launch file to config. Now, adjust topics to be subscribed mannually
+//    message_filters::Subscriber<sensor_msgs::Image> rgb_sub(nh, "/camera/rgb/image_color", 1);//image_raw, image_color
+//    message_filters::Subscriber<sensor_msgs::Image> depth_sub(nh, "camera/depth_registered/image_raw", 1);//_registered
+    message_filters::Subscriber<sensor_msgs::Image> rgb_sub(nh, "/camera/rgb/image_raw", 1);//image_raw, image_color
+    message_filters::Subscriber<sensor_msgs::Image> depth_sub(nh, "camera/depth/image_raw", 1);//_registered
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> sync_pol;
     message_filters::Synchronizer<sync_pol> sync(sync_pol(10), rgb_sub,depth_sub);
     sync.registerCallback(boost::bind(&ImageGrabber::GrabRGBD,&igb,_1,_2));
@@ -155,9 +158,19 @@ void ImageGrabber::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const senso
     mTcw = mpSLAM->TrackRGBD(cv_ptrRGB->image,cv_ptrD->image,cv_ptrRGB->header.stamp.toSec());
     pub_camera(mTcw);
 
-    /// update 3D grid map, implemented in ros_viewer
+    /// update 3D grid map, implemented in ros_viewer. The first kf is not considered
     if (mpSLAM->mbNewKeyframe){
-        ros_view->addKfToQueue(cv_ptrRGB->image,cv_ptrD->image,cv_ptrRGB->header.stamp.toSec(), coordinateTransform(mTcw));
+      ros_view->addKfToQueue(cv_ptrRGB->image,cv_ptrD->image,cv_ptrRGB->header.stamp.toSec(), coordinateTransform(mTcw));
+    }
+    // if loop is closed
+    if (mpSLAM->isLoopCorrected()){
+      std::map<double, cv::Mat> kfposes = mpSLAM->getUpdatedKFposes();
+      for(std::map<double, cv::Mat>::iterator mit=kfposes.begin(), mend=kfposes.end(); mit!=mend; mit++)
+      {
+          cv::Mat pose = mit->second;
+          mit->second = coordinateTransform(pose).clone();
+      }
+      ros_view->addUpdatedKF(kfposes);
     }
 }
 

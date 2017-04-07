@@ -3,6 +3,7 @@
 #include <opencv2/opencv.hpp>
 #include <eigen3/Eigen/Core>
 #include <opencv2/core/eigen.hpp>
+#include "octomap_ros/Id_PointCloud2.h"
 
 #include "ros_viewer.h"
 using namespace std;
@@ -12,7 +13,8 @@ namespace My_Viewer {
 ros_viewer::ros_viewer(const string &strSettingPath)
 {
   ros::NodeHandle nh_;
-  pub_pointCloud = nh_.advertise<sensor_msgs::PointCloud2>("ORB_SLAM/pointcloud2", 1);
+  //pub_pointCloud = nh_.advertise<sensor_msgs::PointCloud2>("ORB_SLAM/pointcloud2", 1);
+  pub_pointCloud = nh_.advertise<octomap_ros::Id_PointCloud2>("ORB_SLAM/pointcloud2", 1);
   pub_pointCloudFull = nh_.advertise<sensor_msgs::PointCloud2>("ORB_SLAM/pointcloudfull2", 1);
   pub_pointCloudupdated = nh_.advertise<sensor_msgs::PointCloud2>("ORB_SLAM/pointcloudup2", 1);
 
@@ -132,14 +134,25 @@ void ros_viewer::Run()
       cloud = createPointCloud(temp,8);
 
       // publish point cloud
+      ///add id----long unsigned int mnId;
       if (pub_pointCloud.getNumSubscribers()){
-        sensor_msgs::PointCloud2Ptr msg(new sensor_msgs::PointCloud2());
-        pcl::toROSMsg(*cloud, *msg);
-        msg->header.frame_id = "world";//
-        msg->header.stamp = ros::Time(temp.timestamp);
-
-        pub_pointCloud.publish(msg);
+          octomap_ros::Id_PointCloud2 my_msg;
+           pcl::toROSMsg(*cloud, my_msg.msg);
+        my_msg.msg.header.frame_id = "world";
+        my_msg.msg.header.stamp = ros::Time(temp.timestamp);
+        my_msg.kf_id = 1123;
+        pub_pointCloud.publish(my_msg);
       }
+
+      // publish point cloud----origin
+//            if (pub_pointCloud.getNumSubscribers()){
+//              sensor_msgs::PointCloud2Ptr msg(new sensor_msgs::PointCloud2());
+//              pcl::toROSMsg(*cloud, *msg);
+//              msg->header.frame_id = "world";//
+//              msg->header.stamp = ros::Time(temp.timestamp);
+
+//              pub_pointCloud.publish(msg);
+//      }
 
       // publish full point cloud
       // simply ignoring the dynamic changes of pointcloud during SLAM

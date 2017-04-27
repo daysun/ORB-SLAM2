@@ -1078,12 +1078,15 @@ bool Tracking::NeedNewKeyFrame()
         return false;
 }
 
+///id
 void Tracking::CreateNewKeyFrame()
 {
     if(!mpLocalMapper->SetNotStop(true))
         return;
 
     KeyFrame* pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+    ///get id
+    mbNewKeyframeID = pKF->mnId;
 
     mpReferenceKF = pKF;
     mCurrentFrame.mpReferenceKF = pKF;

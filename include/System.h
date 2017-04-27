@@ -111,7 +111,9 @@ public:
     // LoadMap(const string &filename);
 
     /// Yang, new keyframe?
+    /// kf-id
     bool mbNewKeyframe;
+    int mbNewKeyframeID;
     std::map<double, cv::Mat> getUpdatedKFposes(); // kf poses after loop closing
     bool isLoopCorrected();
 

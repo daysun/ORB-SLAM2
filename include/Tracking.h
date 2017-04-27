@@ -114,7 +114,9 @@ public:
     bool mbOnlyTracking;
 
     /// Yang, is this a new keyframe? if so, update 3D grid map
+    /// new key frame's id
     bool mbNewKeyframe;
+    int mbNewKeyframeID;
 
     void Reset();
 

@@ -33,6 +33,13 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../../cmake_modules)
 find_package(OpenCV 2.4.3 REQUIRED)
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
+FIND_PACKAGE( PCL REQUIRED COMPONENTS common io 
+ message_generation 
+  std_msgs)
+# 添加头文件和库文件
+ADD_DEFINITIONS( ${PCL_DEFINITIONS} )
+INCLUDE_DIRECTORIES( ${PCL_INCLUDE_DIRS}  )
+LINK_LIBRARIES( ${PCL_LIBRARY_DIRS} )
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -76,5 +83,6 @@ src/ros_viewer.cpp
 
 target_link_libraries(RGBD
 ${LIBS}
+${PCL_LIBRARIES}
 )
 

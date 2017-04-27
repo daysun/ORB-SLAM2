@@ -203,6 +203,7 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const doub
 
     cv::Mat mTcw = mpTracker->GrabImageRGBD(im,depthmap,timestamp);
     mbNewKeyframe = mpTracker->mbNewKeyframe;
+    mbNewKeyframeID = mpTracker->mbNewKeyframeID;
 
     return mTcw.clone();
 }

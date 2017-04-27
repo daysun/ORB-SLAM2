@@ -13,7 +13,7 @@ namespace My_Viewer {
 ros_viewer::ros_viewer(const string &strSettingPath)
 {
   ros::NodeHandle nh_;
-  //pub_pointCloud = nh_.advertise<sensor_msgs::PointCloud2>("ORB_SLAM/pointcloud2", 1);
+  //pub_pointCloud = nh_.advertis e<sensor_msgs::PointCloud2>("ORB_SLAM/pointcloud2", 1);
   pub_pointCloud = nh_.advertise<octomap_ros::Id_PointCloud2>("ORB_SLAM/pointcloud2", 1);
   pub_pointCloudFull = nh_.advertise<sensor_msgs::PointCloud2>("ORB_SLAM/pointcloudfull2", 1);
   pub_pointCloudupdated = nh_.advertise<sensor_msgs::PointCloud2>("ORB_SLAM/pointcloudup2", 1);
@@ -66,13 +66,15 @@ ros_viewer::ros_viewer(const string &strSettingPath)
   mbNeedUpdateKFs = false;
 }
 
-void ros_viewer::addKfToQueue(const cv::Mat im, const cv::Mat depthmap, const double timestamp, const cv::Mat mTcw)
+void ros_viewer::addKfToQueue(const cv::Mat im, const cv::Mat depthmap, const double timestamp,
+                              const cv::Mat mTcw,const unsigned int id)
 {
   rawData temp;
   temp.im = im.clone();
   temp.depth = depthmap.clone();
   temp.mTcw = mTcw.clone();
   temp.timestamp = timestamp;
+  temp.id = id;
 
   unique_lock<mutex> lock(mMutexROSViewer);
   rawImages_queue.push_back(temp);
@@ -140,7 +142,7 @@ void ros_viewer::Run()
            pcl::toROSMsg(*cloud, my_msg.msg);
         my_msg.msg.header.frame_id = "world";
         my_msg.msg.header.stamp = ros::Time(temp.timestamp);
-        my_msg.kf_id = 1123;
+        my_msg.kf_id = temp.id;
         pub_pointCloud.publish(my_msg);
       }
 

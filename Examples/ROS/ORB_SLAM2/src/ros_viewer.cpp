@@ -13,9 +13,10 @@ namespace My_Viewer {
 ros_viewer::ros_viewer(const string &strSettingPath)
 {
   ros::NodeHandle nh_;
-  //pub_pointCloud = nh_.advertis e<sensor_msgs::PointCloud2>("ORB_SLAM/pointcloud2", 1);
   pub_pointCloud = nh_.advertise<octomap_ros::Id_PointCloud2>("ORB_SLAM/pointcloud2", 1);
+  pub_pointCloudLocalUpdate =nh_.advertise<octomap_ros::Id_PointCloud2>("ORB_SLAM/pointcloudlocalup2", 1);
   pub_pointCloudFull = nh_.advertise<sensor_msgs::PointCloud2>("ORB_SLAM/pointcloudfull2", 1);
+  //这是闭环完成之后的整体的点云
   pub_pointCloudupdated = nh_.advertise<sensor_msgs::PointCloud2>("ORB_SLAM/pointcloudup2", 1);
 
   //Check settings file
@@ -64,6 +65,7 @@ ros_viewer::ros_viewer(const string &strSettingPath)
 
   fullCloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
   mbNeedUpdateKFs = false;
+  mbLocalNeedUpdateKFs = false;
 }
 
 void ros_viewer::addKfToQueue(const cv::Mat im, const cv::Mat depthmap, const double timestamp,
@@ -81,6 +83,12 @@ void ros_viewer::addKfToQueue(const cv::Mat im, const cv::Mat depthmap, const do
   rawImages.push_back(temp);
 }
 
+//daysun
+void ros_viewer::addLocalupdate(const std::map<double, cv::Mat> kfposes){
+    localUpdateKFPose = kfposes;
+    mbLocalNeedUpdateKFs = true;
+}
+
 void ros_viewer::addUpdatedKF(const std::map<double, cv::Mat> kfposes)
 {
   updatedKFposes = kfposes;
@@ -88,9 +96,10 @@ void ros_viewer::addUpdatedKF(const std::map<double, cv::Mat> kfposes)
 }
 
 void ros_viewer::updateFullPointCloud()
-{
+{    
   fullCloud = NULL;
   fullCloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
+  cout<<"update full pointcloud rawimage size:"<< rawImages.size()<<endl;
   for (unsigned int i = 0; i < rawImages.size(); i ++){
 //    cout << "image id: " << i << ", pose: " << rawImages[i].mTcw << endl;
     // update kf poses, check timestamp
@@ -101,6 +110,7 @@ void ros_viewer::updateFullPointCloud()
           rawImages[i].mTcw = mit->second.clone();
           // TODO: record the iterator, and erase it afterwards.
 //          updatedKFposes.erase(mit);
+          ///might need a break;
         }
 
     }
@@ -135,26 +145,17 @@ void ros_viewer::Run()
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
       cloud = createPointCloud(temp,8);
 
-      // publish point cloud
-      ///add id----long unsigned int mnId;
+      /// publish point cloud
+      ///add mnId
       if (pub_pointCloud.getNumSubscribers()){
           octomap_ros::Id_PointCloud2 my_msg;
            pcl::toROSMsg(*cloud, my_msg.msg);
         my_msg.msg.header.frame_id = "world";
         my_msg.msg.header.stamp = ros::Time(temp.timestamp);
         my_msg.kf_id = temp.id;
+        cout<<"initial send kfid:"<<temp.id<<endl;
         pub_pointCloud.publish(my_msg);
-      }
-
-      // publish point cloud----origin
-//            if (pub_pointCloud.getNumSubscribers()){
-//              sensor_msgs::PointCloud2Ptr msg(new sensor_msgs::PointCloud2());
-//              pcl::toROSMsg(*cloud, *msg);
-//              msg->header.frame_id = "world";//
-//              msg->header.stamp = ros::Time(temp.timestamp);
-
-//              pub_pointCloud.publish(msg);
-//      }
+      }      
 
       // publish full point cloud
       // simply ignoring the dynamic changes of pointcloud during SLAM
@@ -171,6 +172,45 @@ void ros_viewer::Run()
       }
     }
 
+    //daysun
+    //publish pointCloud after the local optimization
+    if(mbLocalNeedUpdateKFs){
+//         for(map<double, cv::Mat>::iterator mit=localUpdateKFPose.begin(), mend=localUpdateKFPose.end(); mit!=mend; mit++){
+//         }
+      for (size_t t = 0; t < updateLocalId.size(); t ++){
+          // update kf poses, check timestamp
+            int i = updateLocalId[t]-1;
+            cout<<"updateLocalId:"<<updateLocalId[t]<<endl;
+            if(i<0) continue;
+            rawData temp = rawImages[i];
+            cout<<"image.id"<<temp.id<<"\n";
+          for(map<double, cv::Mat>::iterator mit=localUpdateKFPose.begin(), mend=localUpdateKFPose.end(); mit!=mend; mit++)
+          {
+              double mtime = mit->first;
+              if(rawImages[i].timestamp == mtime){
+                rawImages[i].mTcw = mit->second.clone();                
+                cout<<"mbLocalNeedUpdateKFs mat clone.\n";
+                break;
+              }
+          }
+          // recreate point cloud
+          pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
+          cloud = createPointCloud(rawImages[i],8);
+
+          if (pub_pointCloudLocalUpdate.getNumSubscribers()){
+              octomap_ros::Id_PointCloud2 my_msg;
+               pcl::toROSMsg(*cloud, my_msg.msg);
+            my_msg.msg.header.frame_id = "world";
+            my_msg.msg.header.stamp = ros::Time(rawImages[rawImages.size()-1].timestamp);
+            my_msg.kf_id = i;
+            cout<<"------change kfid:"<<(i+1)<<endl;
+            pub_pointCloudLocalUpdate.publish(my_msg);
+          }
+        }
+        mbLocalNeedUpdateKFs  = false;
+        updateLocalId.clear();
+    }
+
     // if a loop is closed, re-create the full point cloud
     if (mbNeedUpdateKFs){
       updateFullPointCloud();
@@ -181,6 +221,7 @@ void ros_viewer::Run()
   }
 }
 
+//transform image+depth-->pointCloud
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr ros_viewer::createPointCloud(const rawData rawimg, int step)
 {
   cv::Mat myrgb = rawimg.im;
@@ -215,7 +256,6 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr ros_viewer::createPointCloud(const rawDat
   bool bgr = false;
 
 //  ros::Time tB = ros::Time::now();
-
   cv::Mat mRcw = mTcw.rowRange(0,3).colRange(0,3);
   cv::Mat mRwc(3,3,CV_32FC1);
   mRwc = mRcw.t();
@@ -268,12 +308,16 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr ros_viewer::createPointCloud(const rawDat
         pt.x = pt.y = pt.z = bad_point;
       }
     }
-
   }
 //  ros::Duration bTcreate = ros::Time::now() - tB;
 //  std::cout << "time cost bTcreate interations: " << bTcreate.toSec() << std::endl;
-
   return res;
 }
 
 } // namespace
+
+
+
+
+
+

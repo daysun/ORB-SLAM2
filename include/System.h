@@ -116,6 +116,8 @@ public:
     int mbNewKeyframeID;
     std::map<double, cv::Mat> getUpdatedKFposes(); // kf poses after loop closing
     bool isLoopCorrected();
+    bool isLocalOptimization();//daysun
+    std::vector<KeyFrame *> getUpdatedLocalId();
 
 private:
 

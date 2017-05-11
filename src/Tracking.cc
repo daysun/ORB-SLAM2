@@ -48,6 +48,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mpKeyFrameDB(pKFDB), mpInitializer(static_cast<Initializer*>(NULL)), mpSystem(pSys),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpMap(pMap), mnLastRelocFrameId(0)
 {
+    mbIsLocalOp = false;
     // Load camera parameters from settings file
 
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
@@ -1252,6 +1253,38 @@ void Tracking::UpdateLocalPoints()
     }
 }
 
+///
+bool Tracking::isLocalOptimization(){
+    if (mbIsLocalOp){
+            mbIsLocalOp = false;
+            return true;
+          }
+          else
+            return false;
+}
+std::vector<KeyFrame *> Tracking::SendUpdateId(){
+    std::vector<KeyFrame *> temp;
+    for(vector< KeyFrame *>::const_iterator itKF=updateId.begin(), itEndKF=updateId.end(); itKF!=itEndKF; itKF++)
+    {
+        KeyFrame * mm = *itKF;
+        temp.push_back(mm);
+    }
+    if(updateId.size() !=0)
+        updateId.clear();
+//    cout<<"Tracking::SendUpdateId\n";
+//    for(vector< KeyFrame *>::const_iterator itKF=temp.begin(), itEndKF=temp.end(); itKF!=itEndKF; itKF++)
+//    {
+//        KeyFrame * mm = *itKF;
+//        cout<<mm->mnId<<"\t";
+//    }
+//    cout<<endl;
+    return temp;
+}
+
+bool SortByM1( KeyFrame* v1, KeyFrame* v2)
+{
+    return v1->mnId < v2->mnId;//升序排列
+}
 
 void Tracking::UpdateLocalKeyFrames()
 {
@@ -1301,7 +1334,6 @@ void Tracking::UpdateLocalKeyFrames()
         mvpLocalKeyFrames.push_back(it->first);
         pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
     }
-
 
     // Include also some not-already-included keyframes that are neighbors to already-included keyframes
     for(vector<KeyFrame*>::const_iterator itKF=mvpLocalKeyFrames.begin(), itEndKF=mvpLocalKeyFrames.end(); itKF!=itEndKF; itKF++)
@@ -1361,6 +1393,59 @@ void Tracking::UpdateLocalKeyFrames()
         mpReferenceKF = pKFmax;
         mCurrentFrame.mpReferenceKF = mpReferenceKF;
     }
+
+    //daysun
+    //compare the difference between mvpPreLocalKFId & mvpLocalKeyFrames.mnid
+    //return the different id and send it to ros,then update it in octomap
+    std::vector<KeyFrame*> currentID;
+    for(vector<KeyFrame*>::const_iterator itKF=mvpLocalKeyFrames.begin(), itEndKF=mvpLocalKeyFrames.end(); itKF!=itEndKF; itKF++)
+    {
+        KeyFrame* pKF = *itKF;
+        currentID.push_back(pKF);
+    }
+    //sort
+    std::sort(currentID.begin(),currentID.end(), SortByM1 );
+    if(mvpPreLocalKFId.size() != 0){        
+        //compare
+        for(vector< KeyFrame*>::const_iterator itKF=mvpPreLocalKFId.begin(), itEndKF=mvpPreLocalKFId.end(); itKF!=itEndKF; itKF++)
+        {
+            KeyFrame* preId = *itKF;
+            for(vector<KeyFrame*>::const_iterator it=currentID.begin(), itEnd=currentID.end(); it!=itEnd; it++)
+            {
+                KeyFrame* Id = *it;
+                if(preId->mnId==Id->mnId){
+                    break;
+                }else if(preId->mnId <Id->mnId){
+                    updateId.push_back(preId);
+                    break;
+                }
+            }
+        }
+        //send it to the ros
+        if(updateId.size() != 0){
+            mbIsLocalOp = true;
+        }
+//        for(vector< KeyFrame*>::const_iterator itKF=mvpPreLocalKFId.begin(), itEndKF=mvpPreLocalKFId.end(); itKF!=itEndKF; itKF++)
+//        {
+//            delete *itKF;
+//        }
+        if(mvpPreLocalKFId.size()!=0)
+            mvpPreLocalKFId.clear();
+    }
+    //recored the previous id
+    mvpPreLocalKFId.reserve(currentID.size());
+    for(vector<KeyFrame*>::const_iterator it=currentID.begin(), itEnd=currentID.end(); it!=itEnd; it++)
+    {
+        KeyFrame* id = *it;
+        mvpPreLocalKFId.push_back(id);
+    } 
+//    for(vector< KeyFrame*>::const_iterator itKF=currentID.begin(), itEndKF=currentID.end(); itKF!=itEndKF; itKF++)
+//    {
+//        delete *itKF;
+//    }
+    if(currentID.size()!=0)
+        currentID.clear();
+//    currentID.clear();
 }
 
 bool Tracking::Relocalization()

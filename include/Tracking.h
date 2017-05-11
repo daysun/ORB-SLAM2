@@ -117,6 +117,11 @@ public:
     /// new key frame's id
     bool mbNewKeyframe;
     int mbNewKeyframeID;
+    bool isLocalOptimization();
+    bool mbIsLocalOp;
+    std::vector<KeyFrame *> mvpPreLocalKFId;//previous id
+    std::vector<KeyFrame *> updateId;//id that need updating
+    std::vector<KeyFrame *> SendUpdateId();
 
     void Reset();
 

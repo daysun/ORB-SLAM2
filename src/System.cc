@@ -208,6 +208,7 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const doub
     return mTcw.clone();
 }
 
+//获取闭环后-更新后所有的id
 std::map<double, cv::Mat> System::getUpdatedKFposes()
 {
   std::map<double, cv::Mat> kfposes;
@@ -223,6 +224,14 @@ std::map<double, cv::Mat> System::getUpdatedKFposes()
   }
 
   return kfposes;
+}
+
+///
+bool System::isLocalOptimization(){
+    return mpTracker->isLocalOptimization();
+}
+std::vector<KeyFrame *> System::getUpdatedLocalId(){
+    return mpTracker->SendUpdateId();
 }
 
 bool System::isLoopCorrected()
@@ -363,7 +372,6 @@ void System::SaveTrajectoryTUM(const string &filename)
     f.close();
     cout << endl << "trajectory saved!" << endl;
 }
-
 
 void System::SaveKeyFrameTrajectoryTUM(const string &filename)
 {

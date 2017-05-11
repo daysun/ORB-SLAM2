@@ -159,12 +159,28 @@ void ImageGrabber::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const senso
     pub_camera(mTcw);
 
     /// update 3D grid map, implemented in ros_viewer. The first kf is not considered
-    /// add id--
     if (mpSLAM->mbNewKeyframe){
       ros_view->addKfToQueue(cv_ptrRGB->image,cv_ptrD->image,
                              cv_ptrRGB->header.stamp.toSec(), coordinateTransform(mTcw),mpSLAM->mbNewKeyframeID);
     }
-    // if loop is closed
+
+    //daysun
+    ///if local optimization
+    if(mpSLAM->isLocalOptimization()){
+        //clone id
+        std::vector<ORB_SLAM2::KeyFrame *>updateId( mpSLAM->getUpdatedLocalId());
+        //get pose according to id
+         std::map<double, cv::Mat> kfposes;
+        for( std::vector<ORB_SLAM2::KeyFrame *>::const_iterator it=updateId.begin(),itEnd=updateId.end();it != itEnd;it++){
+            ORB_SLAM2::KeyFrame * pKF = *it;
+            ros_view->updateLocalId.push_back(pKF->mnId);
+            cv::Mat pose = pKF->GetPose();
+            kfposes[pKF->mTimeStamp] = coordinateTransform(pose).clone();
+        }
+        ros_view->addLocalupdate(kfposes);
+    }
+
+    /// if loop is closed
     if (mpSLAM->isLoopCorrected()){
       std::map<double, cv::Mat> kfposes = mpSLAM->getUpdatedKFposes();
       for(std::map<double, cv::Mat>::iterator mit=kfposes.begin(), mend=kfposes.end(); mit!=mend; mit++)

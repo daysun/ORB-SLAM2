@@ -19,6 +19,7 @@ struct rawData{
   int id;
 };
 
+
 class ros_viewer
 {
 public:
@@ -27,6 +28,9 @@ public:
   void addUpdatedKF(const std::map<double, cv::Mat> kfposes);
   void updateFullPointCloud();
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr createPointCloud(const rawData rawimg, int step=1);
+  //daysun
+  void addLocalupdate(const std::map<double, cv::Mat> kfposes);
+    std::vector<unsigned long> updateLocalId;
 
   // Main function
   void Run();
@@ -48,13 +52,17 @@ private:
 
   std::vector<rawData> rawImages_queue; // temp raw images
   std::vector<rawData> rawImages; //global raw images to be used when a loop is closed
+//  std::vector<updateData> updateKfs;//after local update
 
   ros::Publisher pub_pointCloud;
+    ros::Publisher pub_pointCloudLocalUpdate;
   ros::Publisher pub_pointCloudFull;
   ros::Publisher pub_pointCloudupdated;
 
   std::map<double, cv::Mat> updatedKFposes;
+  std::map<double, cv::Mat> localUpdateKFPose;
   bool mbNeedUpdateKFs;
+  bool mbLocalNeedUpdateKFs;
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr fullCloud;
 };

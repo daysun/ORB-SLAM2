@@ -44,6 +44,8 @@ void LocalMapping::SetTracker(Tracking *pTracker)
     mpTracker=pTracker;
 }
 
+
+
 void LocalMapping::Run()
 {
 
@@ -73,12 +75,16 @@ void LocalMapping::Run()
             }
 
             mbAbortBA = false;
+            //mbIsLocalOp = false;
 
             if(!CheckNewKeyFrames() && !stopRequested())
             {
                 // Local BA
-                if(mpMap->KeyFramesInMap()>2)
+                if(mpMap->KeyFramesInMap()>2){
                     Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpMap);
+                 //   cout<<"local map run(localBA):"<<mpCurrentKeyFrame->mnId;
+                    //mbIsLocalOp = true;
+                }
 
                 // Check redundant local Keyframes
                 KeyFrameCulling();

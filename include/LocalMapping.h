@@ -72,6 +72,8 @@ public:
         return mlNewKeyFrames.size();
     }
 
+
+
 protected:
 
     bool CheckNewKeyFrames();

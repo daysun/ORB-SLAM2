@@ -434,6 +434,7 @@ void LoopClosing::CorrectLoop()
     mpCurrentKF->UpdateConnections();
 
     // Retrive keyframes connected to the current keyframe and compute corrected Sim3 pose by propagation
+    //cout<<"loop close------"<<mpCurrentKF->mnId<<"'s connectedKF:";
     mvpCurrentConnectedKFs = mpCurrentKF->GetVectorCovisibleKeyFrames();
     mvpCurrentConnectedKFs.push_back(mpCurrentKF);
 
@@ -447,8 +448,9 @@ void LoopClosing::CorrectLoop()
         unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
 
         for(vector<KeyFrame*>::iterator vit=mvpCurrentConnectedKFs.begin(), vend=mvpCurrentConnectedKFs.end(); vit!=vend; vit++)
-        {
+        {            
             KeyFrame* pKFi = *vit;
+            //cout<<pKFi->mnId<<"\t";
 
             cv::Mat Tiw = pKFi->GetPose();
 

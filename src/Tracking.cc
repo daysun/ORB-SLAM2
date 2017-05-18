@@ -1423,6 +1423,9 @@ void Tracking::UpdateLocalKeyFrames()
         }
         //send it to the ros
         if(updateId.size() != 0){
+            //delete the redundant updateId
+            sort(updateId.begin(),updateId.end(),SortByM1);
+            updateId.erase(unique(updateId.begin(), updateId.end()), updateId.end());
             mbIsLocalOp = true;
         }
 //        for(vector< KeyFrame*>::const_iterator itKF=mvpPreLocalKFId.begin(), itEndKF=mvpPreLocalKFId.end(); itKF!=itEndKF; itKF++)

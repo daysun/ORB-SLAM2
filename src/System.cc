@@ -239,6 +239,11 @@ bool System::isLoopCorrected()
   return mpLoopCloser->isLoopCorrected();
 }
 
+bool System::isLoopDetected()
+{
+  return mpLoopCloser->isLoopDetected();
+}
+
 cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
 {
     if(mSensor!=MONOCULAR)

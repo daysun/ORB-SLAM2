@@ -89,6 +89,15 @@ public:
         return false;
     }
 
+    bool isLoopDetected(){
+      if (isDetected){
+//        isDetected = false;
+        return true;
+      }
+      else
+        return false;
+    }
+
 protected:
 
     bool CheckNewKeyFrames();
@@ -151,6 +160,7 @@ protected:
 
     // Yang, signal for update 3D grid map
     bool mbLoopCorrected;
+    bool isDetected;
 };
 
 } //namespace ORB_SLAM

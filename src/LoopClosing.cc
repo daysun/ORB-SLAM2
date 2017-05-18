@@ -44,6 +44,7 @@ LoopClosing::LoopClosing(Map *pMap, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, 
     mpMatchedKF = NULL;
 
     mbLoopCorrected = false;
+    isDetected = false;
 }
 
 void LoopClosing::SetTracker(Tracking *pTracker)
@@ -59,7 +60,7 @@ void LoopClosing::SetLocalMapper(LocalMapping *pLocalMapper)
 
 void LoopClosing::Run()
 {
-    mbFinished =false;
+    mbFinished =false;    
 
     while(1)
     {
@@ -407,6 +408,7 @@ bool LoopClosing::ComputeSim3()
 void LoopClosing::CorrectLoop()
 {
     cout << "Loop detected!" << endl;
+    isDetected = true;
 
     // Send a stop signal to Local Mapping
     // Avoid new keyframes are inserted while correcting the loop
@@ -747,6 +749,7 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF)
 
         // Yang, signal be sent to update 3D grid map
         mbLoopCorrected = true;
+        isDetected = false;
     }
 }
 

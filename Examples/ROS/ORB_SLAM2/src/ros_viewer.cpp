@@ -17,7 +17,7 @@ ros_viewer::ros_viewer(const string &strSettingPath)
   pub_pointCloudLocalUpdate =nh_.advertise<octomap_ros::Id_PointCloud2>("ORB_SLAM/pointcloudlocalup2", 1);
   pub_pointCloudFull = nh_.advertise<sensor_msgs::PointCloud2>("ORB_SLAM/pointcloudfull2", 1);
   //这是闭环完成之后的整体的点云
-  pub_pointCloudupdated = nh_.advertise<sensor_msgs::PointCloud2>("ORB_SLAM/pointcloudup2", 1);
+  pub_pointCloudupdated = nh_.advertise<octomap_ros::Id_PointCloud2>("ORB_SLAM/pointcloudup2", 1);
 
   //Check settings file
   cv::FileStorage fSettings(strSettingPath.c_str(), cv::FileStorage::READ);
@@ -101,34 +101,34 @@ void ros_viewer::updateFullPointCloud()
   fullCloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
   cout<<"update full pointcloud rawimage size:"<< rawImages.size()<<endl;
   for (unsigned int i = 0; i < rawImages.size(); i ++){
-//    cout << "image id: " << i << ", pose: " << rawImages[i].mTcw << endl;
     // update kf poses, check timestamp
+//          cout << "image id: " << i << ", pose: " << rawImages[i].mTcw << endl;
     for(map<double, cv::Mat>::iterator mit=updatedKFposes.begin(), mend=updatedKFposes.end(); mit!=mend; mit++)
     {
         double mtime = mit->first;
         if(rawImages[i].timestamp == mtime){
           rawImages[i].mTcw = mit->second.clone();
-          // TODO: record the iterator, and erase it afterwards.
-//          updatedKFposes.erase(mit);
-          ///might need a break;
+          break;
         }
-
     }
+//    cout << "updated pose: " << rawImages[i].mTcw << endl;
     // recreate point cloud
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
     cloud = createPointCloud(rawImages[i],8);
-    *fullCloud += *cloud;
 
+    if (pub_pointCloudupdated.getNumSubscribers()){
+        octomap_ros::Id_PointCloud2 my_msg;
+      pcl::toROSMsg(*cloud, my_msg.msg);
+      my_msg.msg.header.frame_id = "world";
+      my_msg.msg.header.stamp = ros::Time(rawImages[rawImages.size()-1].timestamp);
+      my_msg.kf_id = rawImages[i].id;
+//      cout<<"global update kfid:"<<rawImages[i].id<<endl;
+      pub_pointCloudupdated.publish(my_msg);
+    }
+
+//    *fullCloud += *cloud;
 //    cout << "updated pose: " << rawImages[i].mTcw << endl;
-  }
-
-  if (pub_pointCloudupdated.getNumSubscribers()){
-    sensor_msgs::PointCloud2Ptr msgf(new sensor_msgs::PointCloud2());
-    pcl::toROSMsg(*fullCloud, *msgf);
-    msgf->header.frame_id = "world";//
-    msgf->header.stamp = ros::Time(rawImages[rawImages.size()-1].timestamp);
-    pub_pointCloudupdated.publish(msgf);
-  }
+  }  
 }
 
 void ros_viewer::Run()
@@ -153,43 +153,38 @@ void ros_viewer::Run()
         my_msg.msg.header.frame_id = "world";
         my_msg.msg.header.stamp = ros::Time(temp.timestamp);
         my_msg.kf_id = temp.id;
-        cout<<"initial send kfid:"<<temp.id<<endl;
+//        cout<<"initial send kfid:"<<temp.id<<endl;
         pub_pointCloud.publish(my_msg);
       }      
 
       // publish full point cloud
       // simply ignoring the dynamic changes of pointcloud during SLAM
-      static unsigned int nfullcloud = 0;
-      *fullCloud += *cloud;
+//      static unsigned int nfullcloud = 0;
+//      *fullCloud += *cloud;
 
-      if (pub_pointCloudFull.getNumSubscribers()){
-        sensor_msgs::PointCloud2Ptr msgf(new sensor_msgs::PointCloud2());
-        pcl::toROSMsg(*fullCloud, *msgf);
-        nfullcloud++;
-        msgf->header.frame_id = "world";//
-        msgf->header.stamp = ros::Time(temp.timestamp);
-        pub_pointCloudFull.publish(msgf);
-      }
+//      if (pub_pointCloudFull.getNumSubscribers()){
+//        sensor_msgs::PointCloud2Ptr msgf(new sensor_msgs::PointCloud2());
+//        pcl::toROSMsg(*fullCloud, *msgf);
+//        nfullcloud++;
+//        msgf->header.frame_id = "world";//
+//        msgf->header.stamp = ros::Time(temp.timestamp);
+//        pub_pointCloudFull.publish(msgf);
+//      }
     }
 
     //daysun
     //publish pointCloud after the local optimization
     if(mbLocalNeedUpdateKFs){
-//         for(map<double, cv::Mat>::iterator mit=localUpdateKFPose.begin(), mend=localUpdateKFPose.end(); mit!=mend; mit++){
-//         }
       for (size_t t = 0; t < updateLocalId.size(); t ++){
           // update kf poses, check timestamp
             int i = updateLocalId[t]-1;
-            cout<<"updateLocalId:"<<updateLocalId[t]<<endl;
             if(i<0) continue;
             rawData temp = rawImages[i];
-            cout<<"image.id"<<temp.id<<"\n";
           for(map<double, cv::Mat>::iterator mit=localUpdateKFPose.begin(), mend=localUpdateKFPose.end(); mit!=mend; mit++)
           {
               double mtime = mit->first;
               if(rawImages[i].timestamp == mtime){
-                rawImages[i].mTcw = mit->second.clone();                
-                cout<<"mbLocalNeedUpdateKFs mat clone.\n";
+                rawImages[i].mTcw = mit->second.clone();
                 break;
               }
           }
@@ -203,7 +198,7 @@ void ros_viewer::Run()
             my_msg.msg.header.frame_id = "world";
             my_msg.msg.header.stamp = ros::Time(rawImages[rawImages.size()-1].timestamp);
             my_msg.kf_id = i;
-            cout<<"------change kfid:"<<(i+1)<<endl;
+//            cout<<"change kfid:"<<(i+1)<<endl;
             pub_pointCloudLocalUpdate.publish(my_msg);
           }
         }

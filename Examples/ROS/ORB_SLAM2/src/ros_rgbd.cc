@@ -48,6 +48,8 @@ public:
     void pub_camera(const cv::Mat mTcw);
 
     ORB_SLAM2::System* mpSLAM;
+
+    int loop_id;//recored the number of loopClosing
 };
 
 /// Creat ros-related viewer
@@ -93,6 +95,7 @@ int main(int argc, char **argv)
     ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::RGBD,true);
 
     ImageGrabber igb(&SLAM);
+    igb.loop_id = 0;
 
     ros::NodeHandle nh;
 
@@ -194,6 +197,8 @@ void ImageGrabber::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const senso
 
     /// if loop is closed
     if (mpSLAM->isLoopCorrected()){        
+        loop_id +=1;
+        ros_view->setLoopId(loop_id);
       std::map<double, cv::Mat> kfposes = mpSLAM->getUpdatedKFposes();
       for(std::map<double, cv::Mat>::iterator mit=kfposes.begin(), mend=kfposes.end(); mit!=mend; mit++)
       {

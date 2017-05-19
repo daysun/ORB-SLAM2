@@ -30,7 +30,13 @@ public:
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr createPointCloud(const rawData rawimg, int step=1);
   //daysun
   void addLocalupdate(const std::map<double, cv::Mat> kfposes);
-    std::vector<unsigned long> updateLocalId;
+    std::vector<unsigned long> updateLocalId;    
+    void setLoopId(int id){
+        loop_id = id;
+    }
+    int getLoopId(){
+        return loop_id;
+    }
 
   // Main function
   void Run();
@@ -65,6 +71,7 @@ private:
   bool mbLocalNeedUpdateKFs;
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr fullCloud;
+  int loop_id;
 };
 
 } // namespace

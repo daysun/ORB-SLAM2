@@ -4,6 +4,7 @@
 #include <eigen3/Eigen/Core>
 #include <opencv2/core/eigen.hpp>
 #include "octomap_ros/Id_PointCloud2.h"
+#include "octomap_ros/loopId_PointCloud2.h"
 
 #include "ros_viewer.h"
 using namespace std;
@@ -17,7 +18,7 @@ ros_viewer::ros_viewer(const string &strSettingPath)
   pub_pointCloudLocalUpdate =nh_.advertise<octomap_ros::Id_PointCloud2>("ORB_SLAM/pointcloudlocalup2", 1);
   pub_pointCloudFull = nh_.advertise<sensor_msgs::PointCloud2>("ORB_SLAM/pointcloudfull2", 1);
   //这是闭环完成之后的整体的点云
-  pub_pointCloudupdated = nh_.advertise<octomap_ros::Id_PointCloud2>("ORB_SLAM/pointcloudup2", 1);
+  pub_pointCloudupdated = nh_.advertise<octomap_ros::loopId_PointCloud2>("ORB_SLAM/pointcloudup2", 1);
 
   //Check settings file
   cv::FileStorage fSettings(strSettingPath.c_str(), cv::FileStorage::READ);
@@ -99,7 +100,7 @@ void ros_viewer::updateFullPointCloud()
 {    
   fullCloud = NULL;
   fullCloud = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
-  cout<<"update full pointcloud rawimage size:"<< rawImages.size()<<endl;
+//  cout<<"update full pointcloud rawimage size:"<< rawImages.size()<<endl;
   for (unsigned int i = 0; i < rawImages.size(); i ++){
     // update kf poses, check timestamp
 //          cout << "image id: " << i << ", pose: " << rawImages[i].mTcw << endl;
@@ -117,12 +118,13 @@ void ros_viewer::updateFullPointCloud()
     cloud = createPointCloud(rawImages[i],8);
 
     if (pub_pointCloudupdated.getNumSubscribers()){
-        octomap_ros::Id_PointCloud2 my_msg;
+        octomap_ros::loopId_PointCloud2 my_msg;
       pcl::toROSMsg(*cloud, my_msg.msg);
       my_msg.msg.header.frame_id = "world";
       my_msg.msg.header.stamp = ros::Time(rawImages[rawImages.size()-1].timestamp);
       my_msg.kf_id = rawImages[i].id;
-//      cout<<"global update kfid:"<<rawImages[i].id<<endl;
+      my_msg.loop_id = ros_viewer::getLoopId();
+      cout<<"global update kfid:"<<rawImages[i].id<<"loop_id:"<<my_msg.loop_id<<endl;
       pub_pointCloudupdated.publish(my_msg);
     }
 

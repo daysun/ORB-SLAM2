@@ -64,6 +64,7 @@ private:
     ros::Publisher pub_pointCloudLocalUpdate;
   ros::Publisher pub_pointCloudFull;
   ros::Publisher pub_pointCloudupdated;
+  ros::Publisher  pub_densefull;
 
   std::map<double, cv::Mat> updatedKFposes;
   std::map<double, cv::Mat> localUpdateKFPose;

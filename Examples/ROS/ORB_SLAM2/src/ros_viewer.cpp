@@ -20,6 +20,9 @@ ros_viewer::ros_viewer(const string &strSettingPath)
   //这是闭环完成之后的整体的点云
   pub_pointCloudupdated = nh_.advertise<octomap_ros::loopId_PointCloud2>("ORB_SLAM/pointcloudup2", 1);
 
+  //test
+  pub_densefull = nh_.advertise<sensor_msgs::PointCloud2>("ORB_SLAM/pointclouddense", 1);
+
   //Check settings file
   cv::FileStorage fSettings(strSettingPath.c_str(), cv::FileStorage::READ);
   if(!fSettings.isOpened())
@@ -116,6 +119,7 @@ void ros_viewer::updateFullPointCloud()
     // recreate point cloud
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
     cloud = createPointCloud(rawImages[i],8);
+    *fullCloud += *cloud;  //tesing   
 
     if (pub_pointCloudupdated.getNumSubscribers()){
         octomap_ros::loopId_PointCloud2 my_msg;
@@ -128,9 +132,23 @@ void ros_viewer::updateFullPointCloud()
       pub_pointCloudupdated.publish(my_msg);
     }
 
-//    *fullCloud += *cloud;
 //    cout << "updated pose: " << rawImages[i].mTcw << endl;
   }  
+//testing
+        if (pub_densefull.getNumSubscribers()){
+          sensor_msgs::PointCloud2Ptr msgf(new sensor_msgs::PointCloud2());
+          pcl::toROSMsg(*fullCloud, *msgf);
+        //  nfullcloud++;
+          msgf->header.frame_id = "world";//
+        //  msgf->header.stamp = ros::Time(temp.timestamp);
+          pub_densefull.publish(msgf);
+        }
+
+        //after loop close, store it into pcd file
+        //--------------------------------------------------------------------------
+        std::cout<<"start save\n";
+        pcl::io::savePCDFileASCII("fullSys.pcd",*fullCloud);
+        std::cout<<"saved.\n";
 }
 
 void ros_viewer::Run()
@@ -161,17 +179,20 @@ void ros_viewer::Run()
 
       // publish full point cloud
       // simply ignoring the dynamic changes of pointcloud during SLAM
-//      static unsigned int nfullcloud = 0;
-//      *fullCloud += *cloud;
+      //----------------------------for rviz-----------------------------
+      static unsigned int nfullcloud = 0;
+      *fullCloud += *cloud;
 
-//      if (pub_pointCloudFull.getNumSubscribers()){
-//        sensor_msgs::PointCloud2Ptr msgf(new sensor_msgs::PointCloud2());
-//        pcl::toROSMsg(*fullCloud, *msgf);
-//        nfullcloud++;
-//        msgf->header.frame_id = "world";//
-//        msgf->header.stamp = ros::Time(temp.timestamp);
-//        pub_pointCloudFull.publish(msgf);
-//      }
+
+      if (pub_pointCloudFull.getNumSubscribers()){
+        sensor_msgs::PointCloud2Ptr msgf(new sensor_msgs::PointCloud2());
+        pcl::toROSMsg(*fullCloud, *msgf);
+        nfullcloud++;
+        msgf->header.frame_id = "world";//
+        msgf->header.stamp = ros::Time(temp.timestamp);
+        pub_pointCloudFull.publish(msgf);
+      }
+       //----------------------------for rviz-----------------------------   
     }
 
     //daysun
@@ -193,7 +214,6 @@ void ros_viewer::Run()
           // recreate point cloud
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
           cloud = createPointCloud(rawImages[i],8);
-
           if (pub_pointCloudLocalUpdate.getNumSubscribers()){
               octomap_ros::Id_PointCloud2 my_msg;
                pcl::toROSMsg(*cloud, my_msg.msg);

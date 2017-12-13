@@ -29,10 +29,10 @@ Camera.bf: 40.0
 Camera.RGB: 1
 
 # Close/Far threshold. Baseline times.
-ThDepth: 50.0
+ThDepth: 40.0
 
 # Deptmap values factor 
-DepthMapFactor: 5208.0
+DepthMapFactor: 1.031
 
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
@@ -67,4 +67,3 @@ Viewer.ViewpointX: 0
 Viewer.ViewpointY: -0.7
 Viewer.ViewpointZ: -1.8
 Viewer.ViewpointF: 500
-

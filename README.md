@@ -1,15 +1,21 @@
 ### Q&A
 1、"...compile error - usleep was not declared in this scope..."
+
 You can fix this by adding  "#include <unistd.h>" in corresponding files.
 
 2、The compile of this version of ORB-SLAM is requiring "octomap_ros", which can be obtained in "https://github.com/daysun/octomap_ros".
 
 3、error:"CMakeFiles/RGBD.dir/src/ros_rgbd.cc.o: undefined reference to symbol '_ZTVN8pangolin13HandlerScrollE'
 //usr/local/lib/libpangolin.so: error adding symbols: DSO missing from command line"
+
 You can fix this by 
+
 -"locate  libpangolin"
+
 -copy libpangolin.so into ORB-SLAM2/lib
+
 -in ORB-SLAM2/Examples/ROS/ORB-SLAM2/Cmakelists.txt
+
  ADD
  set(LIBS 
 ${OpenCV_LIBS} 
@@ -18,7 +24,9 @@ ${Pangolin_LIBRARIES}
 ${PROJECT_SOURCE_DIR}/../../../Thirdparty/DBoW2/lib/libDBoW2.so 
 ${PROJECT_SOURCE_DIR}/../../../Thirdparty/g2o/lib/libg2o.so 
 ${PROJECT_SOURCE_DIR}/../../../lib/libORB_SLAM2.so 
+
 **${PROJECT_SOURCE_DIR}/../../../lib/libpangolin.so**
+
 -get it fixed.
 
 

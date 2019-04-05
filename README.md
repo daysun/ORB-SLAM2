@@ -18,7 +18,7 @@ ${Pangolin_LIBRARIES}
 ${PROJECT_SOURCE_DIR}/../../../Thirdparty/DBoW2/lib/libDBoW2.so 
 ${PROJECT_SOURCE_DIR}/../../../Thirdparty/g2o/lib/libg2o.so 
 ${PROJECT_SOURCE_DIR}/../../../lib/libORB_SLAM2.so 
-### ${PROJECT_SOURCE_DIR}/../../../lib/libpangolin.so **
+**${PROJECT_SOURCE_DIR}/../../../lib/libpangolin.so**
 -get it fixed.
 
 

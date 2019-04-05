@@ -1,3 +1,27 @@
+### Q&A
+1、"...compile error - usleep was not declared in this scope..."
+You can fix this by adding  "#include <unistd.h>" in corresponding files.
+
+2、The compile of this version of ORB-SLAM is requiring "octomap_ros", which can be obtained in "https://github.com/daysun/octomap_ros".
+
+3、error:"CMakeFiles/RGBD.dir/src/ros_rgbd.cc.o: undefined reference to symbol '_ZTVN8pangolin13HandlerScrollE'
+//usr/local/lib/libpangolin.so: error adding symbols: DSO missing from command line"
+You can fix this by 
+-"locate  libpangolin"
+-copy libpangolin.so into ORB-SLAM2/lib
+-in ORB-SLAM2/Examples/ROS/ORB-SLAM2/Cmakelists.txt
+ ADD
+ set(LIBS 
+${OpenCV_LIBS} 
+${EIGEN3_LIBS} 
+${Pangolin_LIBRARIES} 
+${PROJECT_SOURCE_DIR}/../../../Thirdparty/DBoW2/lib/libDBoW2.so 
+${PROJECT_SOURCE_DIR}/../../../Thirdparty/g2o/lib/libg2o.so 
+${PROJECT_SOURCE_DIR}/../../../lib/libORB_SLAM2.so 
+**${PROJECT_SOURCE_DIR}/../../../lib/libpangolin.so **
+-get it fixed.
+
+
 # ORB-SLAM2
 **Authors:** [Raul Mur-Artal](http://webdiis.unizar.es/~raulmur/), [Juan D. Tardos](http://webdiis.unizar.es/~jdtardos/), [J. M. M. Montiel](http://webdiis.unizar.es/~josemari/) and [Dorian Galvez-Lopez](http://doriangalvez.com/) ([DBoW2](https://github.com/dorian3d/DBoW2))
 
@@ -208,10 +232,3 @@ This is the default mode. The system runs in parallal three threads: Tracking, L
 
 ### Localization Mode
 This mode can be used when you have a good map of your working area. In this mode the Local Mapping and Loop Closing are deactivated. The system localizes the camera in the map (which is no longer updated), using relocalization if needed. 
-
-
-### Q&A
-1、"...compile error - usleep was not declared in this scope..."
-You can fix this by adding  "#include <unistd.h>" in corresponding files.
-
-2、The compile of this version of ORB-SLAM is requiring "octomap_ros", which can be obtained in "https://github.com/daysun/octomap_ros".
